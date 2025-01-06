@@ -29,5 +29,9 @@
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.12"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/telegent/telegent.git"
   }
 }
