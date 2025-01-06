@@ -1,3 +1,4 @@
+// lib/components/context/ContextManager.ts
 import { connect } from "@lancedb/lancedb";
 
 interface ChatContext {
@@ -112,7 +113,7 @@ export class ContextManager {
   }
 
   // Cleanup old contexts
-  async cleanup(olderThanDays: number = 30) {
+  async cleanup(olderThanDays: number = 3) {
     const cutoffTime = Date.now() - olderThanDays * 24 * 60 * 60 * 1000;
     await this.contextTable.delete(`lastActive < ${cutoffTime}`);
 

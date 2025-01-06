@@ -12,21 +12,27 @@ export class Telegent {
     this.bot = new Bot(config.telegram.token);
     this.memory = new MemoryManager(config.memory);
     this.ai = new AIHandler(config.claude);
-    this.context = new ContextManager();
+    this.context = new ContextManager(config.memory);
 
     this.setupHandlers();
   }
 
   private async setupHandlers() {
-    // Initialize memory manager
+    // Initialize managers
     await this.memory.initialize();
+    await this.context.initialize();
 
     // Handle text messages
     this.bot.on("message:text", async (ctx) => {
       const chatId = ctx.chat.id;
       const messageText = ctx.message.text;
+      const userId = ctx.from?.id || 0;
+      const username = ctx.from?.username;
 
       try {
+        // Get or create context for this chat
+        await this.context.getContext(chatId, userId, username);
+
         // Generate embedding for the message
         const embedding = await this.ai.generateEmbedding(messageText);
 
@@ -36,10 +42,13 @@ export class Telegent {
         // Get recent message history
         const history = await this.memory.getRecentMessages(chatId);
 
+        // Build context string
+        const contextString = await this.context.buildContextString(chatId);
+
         // Process message with AI
         const response = await this.ai.processMessage(
           messageText,
-          undefined, // context
+          contextString,
           history
         );
 
@@ -50,6 +59,18 @@ export class Telegent {
           response,
           await this.ai.generateEmbedding(response)
         );
+
+        // Extract and store any important facts from the conversation
+        if (response.includes("Important fact:")) {
+          const facts = response
+            .split("\n")
+            .filter((line) => line.includes("Important fact:"))
+            .map((line) => line.replace("Important fact:", "").trim());
+
+          for (const fact of facts) {
+            await this.context.addFact(chatId, fact);
+          }
+        }
 
         // Send response
         await ctx.reply(response);
@@ -69,6 +90,13 @@ export class Telegent {
 
   async start() {
     console.log("Starting Telegent bot...");
+
+    // Cleanup old data periodically
+    setInterval(async () => {
+      await this.memory.cleanup();
+      await this.context.cleanup();
+    }, 24 * 60 * 60 * 1000); // Run daily
+
     await this.bot.start({
       onStart: (botInfo) => {
         console.log(`Bot @${botInfo.username} started!`);

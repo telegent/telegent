@@ -76,10 +76,8 @@ export class MemoryManager {
       .toArray();
   }
 
-  async cleanup(chatId: number, olderThanDays: number = 30) {
+  async cleanup(olderThanDays: number = 30) {
     const cutoffTime = Date.now() - olderThanDays * 24 * 60 * 60 * 1000;
-    await this.messagesTable.delete(
-      `chatId = ${chatId} AND timestamp < ${cutoffTime}`
-    );
+    await this.messagesTable.delete(`timestamp < ${cutoffTime}`);
   }
 }
