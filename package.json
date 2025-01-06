@@ -1,7 +1,7 @@
 {
   "name": "telegent",
   "version": "0.1.0",
-  "description": "Telegent - the agent framework built for Telegram",
+  "description": "Telegent - the AI agent framework built for Telegram",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
