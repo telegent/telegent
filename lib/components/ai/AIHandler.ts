@@ -1,5 +1,3 @@
-// lib/components/ai/AIHandler.ts
-
 import Anthropic from "@anthropic-ai/sdk";
 
 type Message = {
