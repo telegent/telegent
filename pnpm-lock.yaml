@@ -14,6 +14,9 @@ importers:
       '@lancedb/lancedb':
         specifier: ^0.14.1
         version: 0.14.1(apache-arrow@18.1.0)
+      apache-arrow:
+        specifier: ^18.1.0
+        version: 18.1.0
       dotenv:
         specifier: ^16.4.7
         version: 16.4.7

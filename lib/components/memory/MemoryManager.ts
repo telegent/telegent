@@ -1,4 +1,5 @@
 import { connect } from "@lancedb/lancedb";
+import * as arrow from "apache-arrow";
 
 interface MessageRecord {
   chatId: number;
@@ -10,7 +11,7 @@ interface MessageRecord {
 
 export class MemoryManager {
   private dbPath: string;
-  private db: any; // LanceDB connection
+  private db: any;
   private messagesTable: any;
 
   constructor(config: { path: string }) {
@@ -20,17 +21,36 @@ export class MemoryManager {
   async initialize() {
     this.db = await connect(this.dbPath);
 
-    // Create or get messages table
     try {
       this.messagesTable = await this.db.openTable("messages");
     } catch {
-      this.messagesTable = await this.db.createTable("messages", [
+      // Define schema using Arrow
+      const schema = new arrow.Schema([
+        new arrow.Field("chatId", new arrow.Int32()),
+        new arrow.Field("timestamp", new arrow.Int64()),
+        new arrow.Field("role", new arrow.Utf8()),
+        new arrow.Field("content", new arrow.Utf8()),
+        new arrow.Field(
+          "embedding",
+          new arrow.FixedSizeList(
+            256,
+            new arrow.Field("item", new arrow.Float32())
+          )
+        ),
+      ]);
+
+      // Create empty table with schema
+      this.messagesTable = await this.db.createEmptyTable("messages", schema);
+
+      // Add initial data
+      const defaultEmbedding = new Float32Array(256).fill(0);
+      await this.messagesTable.add([
         {
           chatId: 0,
           timestamp: Date.now(),
           role: "user",
           content: "",
-          embedding: new Array(256).fill(0),
+          embedding: Array.from(defaultEmbedding),
         },
       ]);
     }
@@ -47,7 +67,7 @@ export class MemoryManager {
       timestamp: Date.now(),
       role,
       content,
-      embedding,
+      embedding: Array.from(embedding),
     };
 
     await this.messagesTable.add([record]);
@@ -55,11 +75,11 @@ export class MemoryManager {
 
   async getRecentMessages(chatId: number, limit: number = 10) {
     const messages = await this.messagesTable
-      .filter(`chatId = ${chatId}`)
-      .sort("timestamp", "desc")
+      .search("*")
+      .where(`chatId = ${chatId}`)
+      .orderBy("timestamp", "desc")
       .limit(limit)
-      .select(["role", "content"])
-      .toArray();
+      .execute();
 
     return messages.reverse();
   }
@@ -70,14 +90,17 @@ export class MemoryManager {
     limit: number = 5
   ) {
     return await this.messagesTable
-      .filter(`chatId = ${chatId}`)
+      .search("*")
+      .where(`chatId = ${chatId}`)
       .limit(limit)
-      .select(["role", "content"])
-      .toArray();
+      .execute();
   }
 
   async cleanup(olderThanDays: number = 30) {
     const cutoffTime = Date.now() - olderThanDays * 24 * 60 * 60 * 1000;
-    await this.messagesTable.delete(`timestamp < ${cutoffTime}`);
+    await this.messagesTable
+      .search("*")
+      .where(`timestamp < ${cutoffTime}`)
+      .remove();
   }
 }
