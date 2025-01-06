@@ -1,5 +1,5 @@
-import { connect } from "@lancedb/lancedb";
-import * as arrow from "apache-arrow";
+import Database from "better-sqlite3";
+import { join } from "path";
 
 interface ChatContext {
   chatId: number;
@@ -11,64 +11,49 @@ interface ChatContext {
   facts: string[];
 }
 
+type DBContext = {
+  chatId: number;
+  userId: number;
+  username: string | null;
+  language: string | null;
+  preferences: string;
+  lastActive: number;
+  facts: string;
+};
+
 export class ContextManager {
-  private dbPath: string;
-  private db: any;
-  private contextTable: any;
+  private db: Database.Database;
   private cache: Map<number, ChatContext>;
 
   constructor(config: { path: string }) {
-    this.dbPath = config.path;
+    this.db = new Database(join(config.path, "contexts.db"));
     this.cache = new Map();
   }
 
   async initialize() {
-    this.db = await connect(this.dbPath);
-    console.log("DB connection:", this.db);
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS contexts (
+        chatId INTEGER PRIMARY KEY,
+        userId INTEGER NOT NULL,
+        username TEXT,
+        language TEXT,
+        preferences TEXT,
+        lastActive INTEGER NOT NULL,
+        facts TEXT
+      )
+    `);
+  }
 
-    try {
-      this.contextTable = await this.db.openTable("contexts");
-      console.log("Context table:", this.contextTable);
-    } catch (error) {
-      console.error("Error opening table:", error);
-
-      // Define schema using Arrow
-      const schema = new arrow.Schema([
-        new arrow.Field("chatId", new arrow.Int32()),
-        new arrow.Field("userId", new arrow.Int32()),
-        new arrow.Field("username", new arrow.Utf8()),
-        new arrow.Field("language", new arrow.Utf8()),
-        new arrow.Field("preferences", new arrow.Utf8()), // Store as JSON string
-        new arrow.Field("lastActive", new arrow.Int64()),
-        new arrow.Field(
-          "facts",
-          new arrow.List(new arrow.Field("item", new arrow.Utf8()))
-        ),
-      ]);
-
-      try {
-        // Create empty table with schema
-        this.contextTable = await this.db.createEmptyTable("contexts", schema);
-
-        // Add initial data
-        await this.contextTable.add([
-          {
-            chatId: 0,
-            userId: 0,
-            lastActive: Date.now(),
-            facts: ["placeholder"],
-            preferences: "{}",
-            language: "en",
-            username: "",
-          },
-        ]);
-
-        console.log("Created table:", this.contextTable);
-      } catch (createError) {
-        console.error("Error creating table:", createError);
-        throw createError;
-      }
-    }
+  private parseDBContext(row: DBContext): ChatContext {
+    return {
+      chatId: row.chatId,
+      userId: row.userId,
+      username: row.username || undefined,
+      language: row.language || undefined,
+      preferences: JSON.parse(row.preferences),
+      lastActive: row.lastActive,
+      facts: JSON.parse(row.facts),
+    };
   }
 
   async getContext(
@@ -82,49 +67,80 @@ export class ContextManager {
       return context;
     }
 
-    const results = await this.contextTable
-      .search("*")
-      .where(`chatId = ${chatId}`)
-      .execute();
+    const stmt = this.db.prepare("SELECT * FROM contexts WHERE chatId = ?");
+    const row = stmt.get(chatId) as DBContext | undefined;
 
-    if (results.length > 0) {
-      const context = results[0];
-      this.cache.set(chatId, context);
-      return context;
+    if (!row) {
+      const newContext: ChatContext = {
+        chatId,
+        userId,
+        username,
+        language: "en",
+        preferences: {},
+        lastActive: Date.now(),
+        facts: [],
+      };
+
+      this.db
+        .prepare(
+          `
+        INSERT INTO contexts (chatId, userId, username, language, preferences, lastActive, facts)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `
+        )
+        .run(
+          chatId,
+          userId,
+          username || null,
+          "en",
+          JSON.stringify({}),
+          Date.now(),
+          JSON.stringify([])
+        );
+
+      this.cache.set(chatId, newContext);
+      return newContext;
     }
 
-    const newContext: ChatContext = {
-      chatId,
-      userId,
-      username,
-      lastActive: Date.now(),
-      facts: [],
-      preferences: {},
-    };
-
-    await this.contextTable.add([newContext]);
-    this.cache.set(chatId, newContext);
-    return newContext;
+    const context = this.parseDBContext(row);
+    this.cache.set(chatId, context);
+    return context;
   }
 
   async updateContext(chatId: number, updates: Partial<ChatContext>) {
     const context = await this.getContext(chatId, updates.userId || 0);
-    const updatedContext = {
+    const updatedContext: ChatContext = {
       ...context,
       ...updates,
       lastActive: Date.now(),
-      facts: updates.facts || context.facts || [],
+      facts: updates.facts || context.facts,
       preferences: updates.preferences || context.preferences || {},
     };
 
-    await this.contextTable.search("*").where(`chatId = ${chatId}`).remove();
-    await this.contextTable.add([updatedContext]);
+    this.db
+      .prepare(
+        `
+      UPDATE contexts 
+      SET userId = ?, username = ?, language = ?, preferences = ?, lastActive = ?, facts = ?
+      WHERE chatId = ?
+    `
+      )
+      .run(
+        updatedContext.userId,
+        updatedContext.username || null,
+        updatedContext.language || null,
+        JSON.stringify(updatedContext.preferences),
+        updatedContext.lastActive,
+        JSON.stringify(updatedContext.facts),
+        chatId
+      );
+
     this.cache.set(chatId, updatedContext);
   }
 
   async addFact(chatId: number, fact: string) {
     const context = await this.getContext(chatId, 0);
-    const facts = [...(context.facts || []), fact];
+    const facts = [...context.facts, fact];
     await this.updateContext(chatId, { facts });
   }
 
@@ -132,7 +148,7 @@ export class ContextManager {
     const context = await this.getContext(chatId, 0);
     let contextString = "";
 
-    if (context.facts && context.facts.length > 0) {
+    if (context.facts.length > 0) {
       contextString += "Important facts from previous conversations:\n";
       contextString += context.facts.map((fact) => `- ${fact}`).join("\n");
       contextString += "\n\n";
@@ -150,10 +166,10 @@ export class ContextManager {
 
   async cleanup(olderThanDays: number = 3) {
     const cutoffTime = Date.now() - olderThanDays * 24 * 60 * 60 * 1000;
-    await this.contextTable
-      .search("*")
-      .where(`lastActive < ${cutoffTime}`)
-      .remove();
+
+    this.db
+      .prepare("DELETE FROM contexts WHERE lastActive < ?")
+      .run(cutoffTime);
 
     for (const [chatId, context] of this.cache.entries()) {
       if (context.lastActive < cutoffTime) {

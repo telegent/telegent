@@ -1,6 +1,8 @@
 import { Bot } from "grammy";
 import { TelegentConfig } from "./types/config";
-import { MemoryManager, AIHandler, ContextManager } from "./components";
+import { MemoryManager } from "./components/memory/MemoryManager";
+import { AIHandler } from "./components/ai/AIHandler";
+import { ContextManager } from "./components/context/ContextManager";
 
 export class Telegent {
   private bot: Bot;
@@ -18,11 +20,8 @@ export class Telegent {
   }
 
   private async setupHandlers() {
-    // Initialize managers
-    await this.memory.initialize();
-    await this.context.initialize();
+    await Promise.all([this.memory.initialize(), this.context.initialize()]);
 
-    // Handle text messages
     this.bot.on("message:text", async (ctx) => {
       const chatId = ctx.chat.id;
       const messageText = ctx.message.text;
@@ -30,20 +29,11 @@ export class Telegent {
       const username = ctx.from?.username;
 
       try {
-        // Get or create context for this chat
-        await this.context.getContext(chatId, userId, username);
-
-        // Generate embedding for the message
-        const embedding = await this.ai.generateEmbedding(messageText);
-
-        // Store user message
-        await this.memory.storeMessage(chatId, "user", messageText, embedding);
-
-        // Get recent message history
-        const history = await this.memory.getRecentMessages(chatId);
-
-        // Build context string
-        const contextString = await this.context.buildContextString(chatId);
+        // Get context and history
+        const [history, contextString] = await Promise.all([
+          this.memory.getRecentMessages(chatId),
+          this.context.buildContextString(chatId),
+        ]);
 
         // Process message with AI
         const response = await this.ai.processMessage(
@@ -52,27 +42,24 @@ export class Telegent {
           history
         );
 
-        // Store AI response
-        await this.memory.storeMessage(
-          chatId,
-          "assistant",
-          response,
-          await this.ai.generateEmbedding(response)
-        );
+        // Store messages
+        await Promise.all([
+          this.storeMessage("user", chatId, messageText),
+          this.storeMessage("assistant", chatId, response),
+        ]);
 
-        // Extract and store any important facts from the conversation
+        // Extract facts if any
         if (response.includes("Important fact:")) {
           const facts = response
             .split("\n")
             .filter((line) => line.includes("Important fact:"))
             .map((line) => line.replace("Important fact:", "").trim());
 
-          for (const fact of facts) {
-            await this.context.addFact(chatId, fact);
-          }
+          await Promise.all(
+            facts.map((fact) => this.context.addFact(chatId, fact))
+          );
         }
 
-        // Send response
         await ctx.reply(response);
       } catch (error) {
         console.error("Error processing message:", error);
@@ -82,20 +69,27 @@ export class Telegent {
       }
     });
 
-    // Handle errors
     this.bot.catch((err) => {
       console.error("Error in bot:", err);
     });
   }
 
+  private async storeMessage(
+    role: "user" | "assistant",
+    chatId: number,
+    content: string
+  ) {
+    const embedding = await this.ai.generateEmbedding(content);
+    await this.memory.storeMessage(chatId, role, content, embedding);
+  }
+
   async start() {
     console.log("Starting Telegent bot...");
 
-    // Cleanup old data periodically
+    // Daily cleanup
     setInterval(async () => {
-      await this.memory.cleanup();
-      await this.context.cleanup();
-    }, 24 * 60 * 60 * 1000); // Run daily
+      await Promise.all([this.memory.cleanup(), this.context.cleanup()]);
+    }, 24 * 60 * 60 * 1000);
 
     await this.bot.start({
       onStart: (botInfo) => {
