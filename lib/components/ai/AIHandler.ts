@@ -1,4 +1,4 @@
-import Anthropic from "@anthropic-ai/sdk";
+import Claude from "@anthropic-ai/sdk";
 
 type Message = {
   role: "user" | "assistant";
@@ -6,16 +6,16 @@ type Message = {
 };
 
 export class AIHandler {
-  private client: Anthropic;
+  private client: Claude;
   private model = "claude-3-opus-20240229";
   private baseSystemPrompt: string;
 
   constructor(config: { apiKey: string }) {
-    this.client = new Anthropic({
+    this.client = new Claude({
       apiKey: config.apiKey,
     });
 
-    this.baseSystemPrompt = `You are a helpful AI assistant in a Telegram chat. Keep responses clear and concise.`;
+    this.baseSystemPrompt = `You are a helpful AI assistant in a Telegram chat. Keep responses clear and concise. If you detect multiple questions or tasks in a single message, address them in order.`;
   }
 
   async processMessage(
@@ -25,17 +25,23 @@ export class AIHandler {
   ): Promise<string> {
     try {
       const systemPrompt = this.buildSystemPrompt(context);
-      const messages = [
-        { role: "user" as const, content: systemPrompt },
-        ...messageHistory,
-        { role: "user" as const, content: userMessage },
-      ];
+
+      const messages = messageHistory.map((msg) => ({
+        role: msg.role as "user" | "assistant",
+        content: msg.content,
+      }));
+
+      messages.push({
+        role: "user" as const,
+        content: userMessage,
+      });
 
       const response = await this.client.messages.create({
         model: this.model,
-        max_tokens: 1000,
-        messages,
+        max_tokens: 4096,
+        messages: messages as Claude.MessageParam[],
         temperature: 0.7,
+        system: systemPrompt,
       });
 
       return response.content[0].type === "text"
@@ -43,44 +49,40 @@ export class AIHandler {
         : "";
     } catch (error) {
       console.error("Error processing message:", error);
-      throw new Error("Failed to process message");
+      throw error;
     }
   }
 
   private buildSystemPrompt(context?: string): string {
     if (!context) return this.baseSystemPrompt;
-    return `${this.baseSystemPrompt}\n\nContext from previous interactions:\n${context}`;
+    return `${this.baseSystemPrompt}\n\nContext:\n${context}`;
   }
 
   async generateEmbedding(text: string): Promise<number[]> {
-    try {
-      const words = text.toLowerCase().split(/\s+/);
-      const uniqueWords = [...new Set(words)];
-      const vector: number[] = new Array(256).fill(0);
+    const words = text.toLowerCase().split(/\s+/);
+    const vector = new Array(1536).fill(0);
 
-      for (const word of uniqueWords) {
-        const hash = this.hashString(word);
-        const index = hash % 256;
-        vector[index] += 1;
-      }
-
-      const magnitude = Math.sqrt(
-        vector.reduce((sum, val) => sum + val * val, 0)
-      );
-      return vector.map((val) => (magnitude === 0 ? 0 : val / magnitude));
-    } catch (error) {
-      console.error("Error generating embedding:", error);
-      throw new Error("Failed to generate embedding");
+    for (const word of words) {
+      const idx = this.getWordIndex(word);
+      vector[idx] += 1;
     }
+
+    return this.normalizeVector(vector);
   }
 
-  private hashString(str: string): number {
+  private getWordIndex(word: string): number {
     let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = (hash << 5) - hash + char;
-      hash = hash & hash;
+    for (let i = 0; i < word.length; i++) {
+      hash = (hash << 5) - hash + word.charCodeAt(i);
+      hash |= 0;
     }
-    return Math.abs(hash);
+    return Math.abs(hash) % 1536;
+  }
+
+  private normalizeVector(vector: number[]): number[] {
+    const magnitude = Math.sqrt(
+      vector.reduce((sum, val) => sum + val * val, 0)
+    );
+    return magnitude === 0 ? vector : vector.map((val) => val / magnitude);
   }
 }
