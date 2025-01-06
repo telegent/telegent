@@ -1,2 +1,2 @@
 export { Telegent } from "./Telegent";
-export * from "./types";
+export * from "./types/index";

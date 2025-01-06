@@ -16,8 +16,9 @@
   "license": "MIT",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.x",
+    "@lancedb/lancedb": "^0.14.1",
     "grammy": "^1.x",
-    "lancedb": "^0.0.1"
+    "tslib": "^2.8.1"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
