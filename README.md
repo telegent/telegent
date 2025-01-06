@@ -19,10 +19,10 @@ dotenv.config();
 
 const bot = new Telegent({
   telegram: {
-    token: process.env.TELEGRAM_TOKEN!,
+    token: process.env.TELEGRAM_TOKEN,
   },
   claude: {
-    apiKey: process.env.CLAUDE_API_KEY!,
+    apiKey: process.env.CLAUDE_API_KEY,
   },
   memory: {
     path: path.join(__dirname, "data"),
