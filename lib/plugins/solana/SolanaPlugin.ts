@@ -18,7 +18,7 @@ export class SolanaPlugin extends BasePlugin {
       description: "Creates a new Solana wallet for the agent",
       examples: [
         "new Solana wallet",
-        "Create a wallet for me",
+        "Create a wallet",
         "Generate a Solana address",
       ],
     },
