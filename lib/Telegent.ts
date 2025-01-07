@@ -178,4 +178,14 @@ export class Telegent {
   async sendMessage(chatId: number, text: string): Promise<void> {
     await this.bot.api.sendMessage(chatId, text);
   }
+
+  async sendImage(
+    chatId: number,
+    imageUrl: string,
+    caption?: string
+  ): Promise<void> {
+    await this.bot.api.sendPhoto(chatId, imageUrl, {
+      caption: caption,
+    });
+  }
 }
