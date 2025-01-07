@@ -11,9 +11,6 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.x
         version: 0.33.1
-      '@lancedb/lancedb':
-        specifier: ^0.14.1
-        version: 0.14.1(apache-arrow@18.1.0)
       '@solana/spl-token':
         specifier: ^0.4.1
         version: 0.4.9(@solana/web3.js@1.98.0(bufferutil@4.0.9)(utf-8-validate@5.0.10))(bufferutil@4.0.9)(fastestsmallesttextencoderdecoder@1.0.22)(typescript@5.7.2)(utf-8-validate@5.0.10)
@@ -71,55 +68,6 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.9':
     resolution: {integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ==}
-
-  '@lancedb/lancedb-darwin-arm64@0.14.1':
-    resolution: {integrity: sha512-eSWV3GydXfyaptPXZ+S3BgXY1YI26oHQDekACaVevRW6/YQD7sS9UhhSZn1mYyDtLTfJu2kOK2XHA9UY8nyuTg==}
-    engines: {node: '>= 18'}
-    cpu: [arm64]
-    os: [darwin]
-
-  '@lancedb/lancedb-darwin-x64@0.14.1':
-    resolution: {integrity: sha512-ecf50ykF9WCWmpwAjs3Mk2mph7d+rMJ9EVJeX0UJ4KHDC874lnTDo6Tfd9iUcbExtNI1KZbu+CFnYsbQU+R0gw==}
-    engines: {node: '>= 18'}
-    cpu: [x64]
-    os: [darwin]
-
-  '@lancedb/lancedb-linux-arm64-gnu@0.14.1':
-    resolution: {integrity: sha512-X7ub1fOm7jZ19KFW/u3nDyFvj5XzDPqEVrp9mmcOgSrst3NJEGGBz1JypkLnTWpg/7IpCBs1UO1G7R7LEsHYOA==}
-    engines: {node: '>= 18'}
-    cpu: [arm64]
-    os: [linux]
-
-  '@lancedb/lancedb-linux-arm64-musl@0.14.1':
-    resolution: {integrity: sha512-rkiWpsQCXwybwEjcdFXkAeGahiLcK/NQUjZc9WBY6CKk2Y9dICIafYzxZ6MDCY19jeJIgs3JS0mjleUWYr3JFw==}
-    engines: {node: '>= 18'}
-    cpu: [arm64]
-    os: [linux]
-
-  '@lancedb/lancedb-linux-x64-gnu@0.14.1':
-    resolution: {integrity: sha512-LGp4D58pQJ3+H3GncNxWHkvhIVOKpTzYUBtVfC8he1rwZ6+CiYDyK9Sim/j8o3UJlJ7cP0m3gNUzPfQchQF9WA==}
-    engines: {node: '>= 18'}
-    cpu: [x64]
-    os: [linux]
-
-  '@lancedb/lancedb-linux-x64-musl@0.14.1':
-    resolution: {integrity: sha512-V/TeoyKUESPL/8L1z4WLbMFe5ZEv4gtxc0AFK8ghiduFYN/Hckuj4oTo/Y0ysLiBx1At9FCa91hWDB301ibHBg==}
-    engines: {node: '>= 18'}
-    cpu: [x64]
-    os: [linux]
-
-  '@lancedb/lancedb-win32-x64-msvc@0.14.1':
-    resolution: {integrity: sha512-4M8D0j8/3WZv4CKo+Z44sISKPCKWN5MWA0dcEEGw4sEXHF2RJLrMIOOgEpT5NF7VW+X4t2JJxUA6j2T3cXaD8w==}
-    engines: {node: '>= 18'}
-    cpu: [x64]
-    os: [win32]
-
-  '@lancedb/lancedb@0.14.1':
-    resolution: {integrity: sha512-DfJ887t52n/2s8G1JnzE7gAR4i7UnfP1OjDYnJ4yTk0aIcn76CbVOUegYfURYlYjL+QFdI1MrAzUdMgYgsGGcA==}
-    engines: {node: '>= 18'}
-    os: [darwin, linux, win32]
-    peerDependencies:
-      apache-arrow: '>=15.0.0 <=18.1.0'
 
   '@noble/curves@1.8.0':
     resolution: {integrity: sha512-j84kjAbzEnQHaSIhRPUmB3/eVXu2k3dKPl2LOrR8fSOIL+89U+7lV117EWHtq/GHM3ReGHM46iRBdZfpc4HRUQ==}
@@ -579,9 +527,6 @@ packages:
     resolution: {integrity: sha512-9u/sniCrY3D5WdsERHzHE4G2YCXqoG5FTHUiCC4SIbr6XcLZBY05ya9EKjYek9O5xOAwjGq+1JdGBAS7Q9ScoA==}
     engines: {node: '>= 6'}
 
-  reflect-metadata@0.2.2:
-    resolution: {integrity: sha512-urBwgfrvVP/eAyXx4hluJivBKzuEbSQs9rKWCrCkbSxNv8mxPcUZKeuoF3Uy4mJl3Lwprp6yy5/39VWigZ4K6Q==}
-
   regenerator-runtime@0.14.1:
     resolution: {integrity: sha512-dYnhHh0nJoMfnkZs6GmmhFknAGRrLznOu5nc9ML+EJxGvrx6H7teuevqVqCuPcPK//3eDrrjQhehXVx9cnkGdw==}
 
@@ -770,40 +715,6 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
-
-  '@lancedb/lancedb-darwin-arm64@0.14.1':
-    optional: true
-
-  '@lancedb/lancedb-darwin-x64@0.14.1':
-    optional: true
-
-  '@lancedb/lancedb-linux-arm64-gnu@0.14.1':
-    optional: true
-
-  '@lancedb/lancedb-linux-arm64-musl@0.14.1':
-    optional: true
-
-  '@lancedb/lancedb-linux-x64-gnu@0.14.1':
-    optional: true
-
-  '@lancedb/lancedb-linux-x64-musl@0.14.1':
-    optional: true
-
-  '@lancedb/lancedb-win32-x64-msvc@0.14.1':
-    optional: true
-
-  '@lancedb/lancedb@0.14.1(apache-arrow@18.1.0)':
-    dependencies:
-      apache-arrow: 18.1.0
-      reflect-metadata: 0.2.2
-    optionalDependencies:
-      '@lancedb/lancedb-darwin-arm64': 0.14.1
-      '@lancedb/lancedb-darwin-x64': 0.14.1
-      '@lancedb/lancedb-linux-arm64-gnu': 0.14.1
-      '@lancedb/lancedb-linux-arm64-musl': 0.14.1
-      '@lancedb/lancedb-linux-x64-gnu': 0.14.1
-      '@lancedb/lancedb-linux-x64-musl': 0.14.1
-      '@lancedb/lancedb-win32-x64-msvc': 0.14.1
 
   '@noble/curves@1.8.0':
     dependencies:
@@ -1312,8 +1223,6 @@ snapshots:
       inherits: 2.0.4
       string_decoder: 1.3.0
       util-deprecate: 1.0.2
-
-  reflect-metadata@0.2.2: {}
 
   regenerator-runtime@0.14.1: {}
 
