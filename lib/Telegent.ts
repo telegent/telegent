@@ -3,12 +3,14 @@ import { TelegentConfig } from "./types/config";
 import { MemoryManager } from "./components/memory/MemoryManager";
 import { AIHandler } from "./components/ai/AIHandler";
 import { ContextManager } from "./components/context/ContextManager";
+import { Plugin } from "./types/plugin";
 
 export class Telegent {
   private bot: Bot;
   private memory: MemoryManager;
   private ai: AIHandler;
   private context: ContextManager;
+  private plugins: Map<string, Plugin> = new Map();
 
   constructor(config: TelegentConfig) {
     this.bot = new Bot(config.telegram.token);
@@ -17,6 +19,29 @@ export class Telegent {
     this.context = new ContextManager(config.memory);
 
     this.setupHandlers();
+  }
+
+  async registerPlugin(plugin: Plugin): Promise<void> {
+    if (this.plugins.has(plugin.metadata.name)) {
+      throw new Error(`Plugin ${plugin.metadata.name} is already registered`);
+    }
+
+    this.plugins.set(plugin.metadata.name, plugin);
+    if (plugin.onLoad) {
+      await plugin.onLoad(this);
+    }
+  }
+
+  async unregisterPlugin(pluginName: string): Promise<void> {
+    const plugin = this.plugins.get(pluginName);
+    if (!plugin) {
+      throw new Error(`Plugin ${pluginName} is not registered`);
+    }
+
+    if (plugin.onUnload) {
+      await plugin.onUnload();
+    }
+    this.plugins.delete(pluginName);
   }
 
   private async setupHandlers() {
@@ -29,6 +54,13 @@ export class Telegent {
       const username = ctx.from?.username;
 
       try {
+        // Notify plugins about the message
+        for (const plugin of this.plugins.values()) {
+          if (plugin.onMessage) {
+            await plugin.onMessage(chatId, messageText);
+          }
+        }
+
         // Get context and history
         const [history, contextString] = await Promise.all([
           this.memory.getRecentMessages(chatId),
@@ -62,6 +94,13 @@ export class Telegent {
 
         await ctx.reply(response);
       } catch (error) {
+        // Notify plugins about the error
+        for (const plugin of this.plugins.values()) {
+          if (plugin.onError) {
+            await plugin.onError(error as Error);
+          }
+        }
+
         console.error("Error processing message:", error);
         await ctx.reply(
           "Sorry, I encountered an error processing your message. Please try again."
