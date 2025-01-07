@@ -16,13 +16,14 @@
   "license": "MIT",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.x",
+    "@solana/spl-token": "^0.4.1",
+    "@solana/web3.js": "^1.90.0",
     "better-sqlite3": "^11.7.2",
     "dotenv": "^16.4.7",
     "grammy": "^1.x",
+    "openai": "^4.77.3",
     "ts-node": "^10.9.2",
-    "tslib": "^2.8.1",
-    "@solana/web3.js": "^1.90.0",
-    "@solana/spl-token": "^0.4.1"
+    "tslib": "^2.8.1"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"

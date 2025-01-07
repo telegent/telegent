@@ -8,4 +8,7 @@ export interface TelegentConfig {
   memory: {
     path: string;
   };
+  openai?: {
+    apiKey: string;
+  };
 }
