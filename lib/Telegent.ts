@@ -44,6 +44,24 @@ export class Telegent {
     this.plugins.delete(pluginName);
   }
 
+  private async buildPluginContext(): Promise<string> {
+    let pluginContext = "Available plugins and their capabilities:\n\n";
+
+    for (const plugin of this.plugins.values()) {
+      pluginContext += `${plugin.metadata.name}:\n`;
+      for (const capability of plugin.capabilities) {
+        pluginContext += `- ${capability.name}: ${capability.description}\n`;
+        pluginContext += `  Examples:\n`;
+        capability.examples.forEach((example) => {
+          pluginContext += `  • ${example}\n`;
+        });
+      }
+      pluginContext += "\n";
+    }
+
+    return pluginContext;
+  }
+
   private async setupHandlers() {
     await Promise.all([this.memory.initialize(), this.context.initialize()]);
 
@@ -54,22 +72,37 @@ export class Telegent {
       const username = ctx.from?.username;
 
       try {
-        // Notify plugins about the message
-        for (const plugin of this.plugins.values()) {
-          if (plugin.onMessage) {
-            await plugin.onMessage(chatId, messageText);
+        // Get context and plugin information
+        const [history, contextString, pluginContext] = await Promise.all([
+          this.memory.getRecentMessages(chatId),
+          this.context.buildContextString(chatId),
+          this.buildPluginContext(),
+        ]);
+
+        // First inference - determine if plugins are needed
+        const pluginCommand = await this.ai.inferPluginActions(
+          messageText,
+          pluginContext
+        );
+
+        // Execute plugin if needed
+        let pluginResult = null;
+        if (pluginCommand !== "none" && pluginCommand.includes("@plugin:")) {
+          const [pluginName, action, ...params] = pluginCommand
+            .split("@plugin:")[1]
+            .split(" ");
+          const plugin = this.plugins.get(pluginName);
+
+          if (plugin) {
+            const response = await plugin.execute(action, params);
+            pluginResult = response.result;
           }
         }
 
-        // Get context and history
-        const [history, contextString] = await Promise.all([
-          this.memory.getRecentMessages(chatId),
-          this.context.buildContextString(chatId),
-        ]);
-
-        // Process message with AI
-        const response = await this.ai.processMessage(
+        // Second inference - generate final response
+        const response = await this.ai.generateResponse(
           messageText,
+          pluginResult,
           contextString,
           history
         );
@@ -140,5 +173,9 @@ export class Telegent {
   async stop() {
     console.log("Stopping Telegent bot...");
     await this.bot.stop();
+  }
+
+  async sendMessage(chatId: number, text: string): Promise<void> {
+    await this.bot.api.sendMessage(chatId, text);
   }
 }
