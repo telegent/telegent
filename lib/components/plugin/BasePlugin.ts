@@ -1,9 +1,16 @@
-import { Plugin, PluginConfig, PluginMetadata } from "../../types/plugin";
+import {
+  Plugin,
+  PluginConfig,
+  PluginMetadata,
+  PluginCapability,
+  PluginResponse,
+} from "../../types/plugin";
 import { Telegent } from "../../Telegent";
 
 export abstract class BasePlugin implements Plugin {
   protected telegent: Telegent | null = null;
   protected config: PluginConfig;
+  abstract capabilities: PluginCapability[];
 
   constructor(
     public readonly metadata: PluginMetadata,
@@ -11,6 +18,8 @@ export abstract class BasePlugin implements Plugin {
   ) {
     this.config = config;
   }
+
+  abstract execute(action: string, params: any): Promise<PluginResponse>;
 
   async onLoad(telegent: Telegent): Promise<void> {
     this.telegent = telegent;
@@ -20,6 +29,5 @@ export abstract class BasePlugin implements Plugin {
     this.telegent = null;
   }
 
-  async onMessage?(chatId: number, message: string): Promise<void>;
   async onError?(error: Error): Promise<void>;
 }

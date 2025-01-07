@@ -7,7 +7,7 @@ type Message = {
 
 export class AIHandler {
   private client: Claude;
-  private model = "claude-3-opus-20240229";
+  private model = "claude-3-5-haiku-20241022";
   private baseSystemPrompt: string;
 
   constructor(config: { apiKey: string }) {
@@ -15,47 +15,69 @@ export class AIHandler {
       apiKey: config.apiKey,
     });
 
-    this.baseSystemPrompt = `You are a helpful AI assistant in a Telegram chat. Keep responses clear and concise. If you detect multiple questions or tasks in a single message, address them in order.`;
+    this.baseSystemPrompt = `You are a helpful AI Agent in a Telegram chat. Keep responses clear and concise. If you detect multiple questions or tasks in a single message, address them in order.`;
   }
 
-  async processMessage(
+  async inferPluginActions(
     userMessage: string,
-    context?: string,
+    pluginContext: string
+  ): Promise<string> {
+    const systemPrompt =
+      "You are a plugin coordinator. Your task is to determine if any plugins should be used based on the user's message.\n" +
+      "If a plugin should be used, respond ONLY with the plugin command in this format:\n" +
+      "@plugin:plugin_name action param1 param2\n" +
+      "If no plugin is needed, respond with 'none'.\n\n" +
+      "Available plugins and capabilities:\n" +
+      pluginContext;
+
+    const response = await this.client.messages.create({
+      model: this.model,
+      max_tokens: 100,
+      messages: [{ role: "user", content: userMessage }],
+      temperature: 0.1,
+      system: systemPrompt,
+    });
+
+    return response.content[0].type === "text"
+      ? response.content[0].text
+      : "none";
+  }
+
+  async generateResponse(
+    userMessage: string,
+    pluginResult: string | null,
+    context: string,
     messageHistory: Message[] = []
   ): Promise<string> {
-    try {
-      const systemPrompt = this.buildSystemPrompt(context);
+    let systemPrompt = this.baseSystemPrompt;
 
-      const messages = messageHistory.map((msg) => ({
-        role: msg.role as "user" | "assistant",
-        content: msg.content,
-      }));
-
-      messages.push({
-        role: "user" as const,
-        content: userMessage,
-      });
-
-      const response = await this.client.messages.create({
-        model: this.model,
-        max_tokens: 4096,
-        messages: messages as Claude.MessageParam[],
-        temperature: 0.7,
-        system: systemPrompt,
-      });
-
-      return response.content[0].type === "text"
-        ? response.content[0].text
-        : "";
-    } catch (error) {
-      console.error("Error processing message:", error);
-      throw error;
+    if (pluginResult) {
+      systemPrompt += "\n\nPlugin execution result:\n" + pluginResult;
     }
-  }
 
-  private buildSystemPrompt(context?: string): string {
-    if (!context) return this.baseSystemPrompt;
-    return `${this.baseSystemPrompt}\n\nContext:\n${context}`;
+    if (context) {
+      systemPrompt += "\n\nContext:\n" + context;
+    }
+
+    const messages = messageHistory.map((msg) => ({
+      role: msg.role as "user" | "assistant",
+      content: msg.content,
+    }));
+
+    messages.push({
+      role: "user" as const,
+      content: userMessage,
+    });
+
+    const response = await this.client.messages.create({
+      model: this.model,
+      max_tokens: 4096,
+      messages: messages as Claude.MessageParam[],
+      temperature: 0.7,
+      system: systemPrompt,
+    });
+
+    return response.content[0].type === "text" ? response.content[0].text : "";
   }
 
   async generateEmbedding(text: string): Promise<number[]> {
