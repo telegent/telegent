@@ -15,7 +15,7 @@ export class AIHandler {
       apiKey: config.apiKey,
     });
 
-    this.baseSystemPrompt = `You are a helpful AI Agent in a Telegram chat. Keep responses clear and concise. If you detect multiple questions or tasks in a single message, address them in order.`;
+    this.baseSystemPrompt = `You are a helpful AI Agent in a Telegram chat. Keep responses clear and concise. If you detect multiple questions or tasks in a single message, address them in order. Please use the plugin capabilities context in your response. Do not say you cannot do something if there is a plugin that can do it.`;
   }
 
   async inferPluginActions(
@@ -50,6 +50,10 @@ export class AIHandler {
     messageHistory: Message[] = []
   ): Promise<string> {
     let systemPrompt = this.baseSystemPrompt;
+
+    if (pluginResult?.startsWith("http")) {
+      return `I've generated an image based on your request. Here it is: ${pluginResult}`;
+    }
 
     if (pluginResult) {
       systemPrompt += "\n\nPlugin execution result:\n" + pluginResult;
