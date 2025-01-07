@@ -1,6 +1,6 @@
 # Telegent
 
-[![npm](https://img.shields.io/npm/v/grammy?logo=npm&style=flat&labelColor=000&color=3b82f6)](https://www.npmjs.org/package/telegent)
+[![npm](https://img.shields.io/npm/v/telegent?logo=npm&style=flat&labelColor=000&color=3b82f6)](https://www.npmjs.org/package/telegent)
 
 Telegent makes it easy for you to build and run your own AI agent on Telegram, powered by Anthropic's Claude API with contextual understanding and memory management.
 
