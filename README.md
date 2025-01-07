@@ -42,10 +42,17 @@ bot.start();
 
 ## Features
 
+- Plugin System
 - Context-aware responses using Claude AI
 - Local SQLite-based memory system
 - Persistent conversation history
 - TypeScript support
+
+## Available Plugins
+
+- Solana (Basic)
+- Image Generation (Basic)
+- Logger (Example Plugin)
 
 ## License
 
