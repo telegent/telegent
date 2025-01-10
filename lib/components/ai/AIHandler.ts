@@ -1,4 +1,5 @@
 import Claude from "@anthropic-ai/sdk";
+import { Character } from '../../types/character';
 
 type Message = {
   role: "user" | "assistant";
@@ -9,13 +10,47 @@ export class AIHandler {
   private client: Claude;
   private model = "claude-3-5-haiku-20241022";
   private baseSystemPrompt: string;
+  private character?: Character;
 
-  constructor(config: { apiKey: string }) {
+  constructor(config: { apiKey: string; character?: Character }) {
     this.client = new Claude({
       apiKey: config.apiKey,
     });
+    
+    this.character = config.character;
+    this.baseSystemPrompt = this.buildSystemPrompt();
+  }
 
-    this.baseSystemPrompt = `You are a helpful AI Agent in a Telegram chat. Keep responses clear and concise. If you detect multiple questions or tasks in a single message, address them in order. Please use the plugin capabilities context in your response. Do not say you cannot do something if there is a plugin that can do it.`;
+  private buildSystemPrompt(): string {
+    let prompt = `You are a helpful AI Agent in a Telegram chat.`;
+    
+    if (this.character) {
+      if (this.character.name) {
+        prompt = `You are ${this.character.name}, `;
+      }
+      
+      if (this.character.role) {
+        prompt += `acting as ${this.character.role}. `;
+      }
+
+      if (this.character.basePersonality) {
+        prompt += `${this.character.basePersonality} `;
+      }
+
+      if (this.character.traits?.length) {
+        prompt += `Your personality traits include: ${this.character.traits
+          .map(trait => `${trait.name} (${trait.description})`)
+          .join(', ')}. `;
+      }
+
+      if (this.character.customPrompt) {
+        prompt += `${this.character.customPrompt} `;
+      }
+    }
+
+    prompt += `Keep responses clear and concise. If you detect multiple questions or tasks in a single message, address them in order. Please use the plugin capabilities context in your response. Do not say you cannot do something if there is a plugin that can do it.`;
+
+    return prompt;
   }
 
   async inferPluginActions(

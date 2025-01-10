@@ -15,7 +15,10 @@ export class Telegent {
   constructor(config: TelegentConfig) {
     this.bot = new Bot(config.telegram.token);
     this.memory = new MemoryManager(config.memory);
-    this.ai = new AIHandler(config.claude);
+    this.ai = new AIHandler({
+      apiKey: config.claude.apiKey,
+      character: config.character
+    });
     this.context = new ContextManager(config.memory);
 
     this.setupHandlers();

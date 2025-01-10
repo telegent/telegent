@@ -1,3 +1,5 @@
+import { Character } from './character';
+
 export interface TelegentConfig {
   telegram: {
     token: string;
@@ -11,4 +13,5 @@ export interface TelegentConfig {
   openai?: {
     apiKey: string;
   };
+  character?: Character;
 }
