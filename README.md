@@ -34,6 +34,53 @@ const bot = new Telegent({
 bot.start();
 ```
 
+## Plugin System
+
+Telegent supports a plugin system to extend functionality. Here's how to use plugins:
+
+```typescript
+import { Telegent } from "telegent";
+import { SolanaPlugin } from "telegent/plugins/solana";
+import { ImageGenPlugin } from "telegent/plugins/image-gen";
+import { LoggerPlugin } from "telegent/plugins/logger";
+
+const bot = new Telegent({
+  telegram: {
+    token: process.env.TELEGRAM_TOKEN,
+  },
+  claude: {
+    apiKey: process.env.CLAUDE_API_KEY,
+  },
+  memory: {
+    path: path.join(__dirname, "data"),
+  },
+});
+
+// Register plugins
+bot.use(new SolanaPlugin());
+bot.use(new ImageGenPlugin());
+bot.use(new LoggerPlugin());
+
+bot.start();
+```
+
+### Built-in Plugins
+
+- **Solana Plugin**: Adds Solana blockchain interaction capabilities
+  ```typescript
+  import { SolanaPlugin } from "telegent/plugins/solana";
+  ```
+
+- **Image Generation Plugin**: Enables AI image generation
+  ```typescript
+  import { ImageGenPlugin } from "telegent/plugins/image-gen";
+  ```
+
+- **Logger Plugin**: Example plugin for logging bot activities
+  ```typescript
+  import { LoggerPlugin } from "telegent/plugins/logger";
+  ```
+
 ## Prerequisites
 
 - Node.js 18+
