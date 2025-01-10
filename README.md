@@ -40,9 +40,7 @@ Telegent supports a plugin system to extend functionality. Here's how to use plu
 
 ```typescript
 import { Telegent } from "telegent";
-import { SolanaPlugin } from "telegent/plugins/solana";
-import { ImageGenPlugin } from "telegent/plugins/image-gen";
-import { LoggerPlugin } from "telegent/plugins/logger";
+import { SolanaPlugin, ImageGenPlugin, LoggerPlugin } from "telegent";
 
 const bot = new Telegent({
   telegram: {
@@ -68,17 +66,17 @@ bot.start();
 
 - **Solana Plugin**: Adds Solana blockchain interaction capabilities
   ```typescript
-  import { SolanaPlugin } from "telegent/plugins/solana";
+  import { SolanaPlugin } from "telegent";
   ```
 
 - **Image Generation Plugin**: Enables AI image generation
   ```typescript
-  import { ImageGenPlugin } from "telegent/plugins/image-gen";
+  import { ImageGenPlugin } from "telegent";
   ```
 
 - **Logger Plugin**: Example plugin for logging bot activities
   ```typescript
-  import { LoggerPlugin } from "telegent/plugins/logger";
+  import { LoggerPlugin } from "telegent";
   ```
 
 ## Prerequisites
