@@ -25,8 +25,10 @@ export class ImageGenerationPlugin extends BasePlugin implements Plugin {
         name: "generate",
         description: "Generate an image based on a text prompt using DALL-E 3",
         examples: [
-          "@plugin:image-generation generate A serene landscape with mountains and a lake at sunset",
-          "@plugin:image-generation generate A futuristic cityscape at night with flying cars",
+          "generate a serene landscape with mountains and a lake at sunset",
+          "generate a futuristic cityscape at night with flying cars",
+          "create an image",
+          "show me an image",
         ],
       },
       {
@@ -34,8 +36,8 @@ export class ImageGenerationPlugin extends BasePlugin implements Plugin {
         description:
           "Generate a high-definition (1024x1024) image based on a text prompt",
         examples: [
-          "@plugin:image-generation generate-hd A detailed portrait of a cyberpunk character",
-          "@plugin:image-generation generate-hd An intricate steampunk machine with brass gears",
+          "high definition portrait of a cyberpunk character",
+          "generate a high definition of an intricate steampunk machine with brass gears",
         ],
       },
     ];
