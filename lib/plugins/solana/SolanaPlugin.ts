@@ -37,7 +37,7 @@ export class SolanaPlugin extends BasePlugin {
     const metadata: PluginMetadata = {
       name: "solana",
       version: "1.0.0",
-      description: "Manages Solana wallet for the agent",
+      description: "Manages a Solana wallet for the agent",
       author: "Telegent",
     };
 

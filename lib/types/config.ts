@@ -1,4 +1,4 @@
-import { Character } from './character';
+import { Character } from "./character";
 
 export interface TelegentConfig {
   telegram: {
@@ -11,6 +11,9 @@ export interface TelegentConfig {
     path: string;
   };
   openai?: {
+    apiKey: string;
+  };
+  codex?: {
     apiKey: string;
   };
   character?: Character;

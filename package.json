@@ -16,6 +16,7 @@
   "license": "MIT",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.x",
+    "@codex-data/sdk": "^1.0.3",
     "@solana/spl-token": "^0.4.1",
     "@solana/web3.js": "^1.90.0",
     "better-sqlite3": "^11.7.2",
