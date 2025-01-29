@@ -1,12 +1,16 @@
 import { Character } from "./character";
 
+export type AIConfig = {
+  provider: "claude" | "deepseek";
+  claudeApiKey?: string;
+  deepseekApiKey?: string;
+};
+
 export interface TelegentConfig {
   telegram: {
     token: string;
   };
-  claude: {
-    apiKey: string;
-  };
+  ai: AIConfig;
   memory: {
     path: string;
   };

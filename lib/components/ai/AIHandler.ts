@@ -1,34 +1,57 @@
 import Claude from "@anthropic-ai/sdk";
-import { Character } from '../../types/character';
+import OpenAI from "openai";
+import { Character } from "../../types/character";
 
 type Message = {
   role: "user" | "assistant";
   content: string;
 };
 
+type AIProvider = "claude" | "deepseek";
+
 export class AIHandler {
-  private client: Claude;
-  private model = "claude-3-5-haiku-20241022";
+  private claudeClient?: Claude;
+  private deepseekClient?: OpenAI;
+  private provider: AIProvider;
+  private model: string;
   private baseSystemPrompt: string;
   private character?: Character;
 
-  constructor(config: { apiKey: string; character?: Character }) {
-    this.client = new Claude({
-      apiKey: config.apiKey,
-    });
-    
+  constructor(config: {
+    provider?: AIProvider;
+    claudeApiKey?: string;
+    deepseekApiKey?: string;
+    character?: Character;
+  }) {
+    this.provider = config.provider || "claude";
+
+    if (this.provider === "claude" && config.claudeApiKey) {
+      this.claudeClient = new Claude({
+        apiKey: config.claudeApiKey,
+      });
+      this.model = "claude-3-5-haiku-20241022";
+    } else if (this.provider === "deepseek" && config.deepseekApiKey) {
+      this.deepseekClient = new OpenAI({
+        apiKey: config.deepseekApiKey,
+        baseURL: "https://api.deepseek.com/v1",
+      });
+      this.model = "deepseek-chat";
+    } else {
+      throw new Error("Invalid provider configuration");
+    }
+
     this.character = config.character;
     this.baseSystemPrompt = this.buildSystemPrompt();
   }
 
   private buildSystemPrompt(): string {
     let prompt = `You are a helpful AI Agent in a Telegram chat.`;
-    
+
     if (this.character) {
       if (this.character.name) {
         prompt = `You are ${this.character.name}, `;
       }
-      
+
       if (this.character.role) {
         prompt += `acting as ${this.character.role}. `;
       }
@@ -39,8 +62,8 @@ export class AIHandler {
 
       if (this.character.traits?.length) {
         prompt += `Your personality traits include: ${this.character.traits
-          .map(trait => `${trait.name} (${trait.description})`)
-          .join(', ')}. `;
+          .map((trait) => `${trait.name} (${trait.description})`)
+          .join(", ")}. `;
       }
 
       if (this.character.customPrompt) {
@@ -65,17 +88,30 @@ export class AIHandler {
       "Available plugins and capabilities:\n" +
       pluginContext;
 
-    const response = await this.client.messages.create({
-      model: this.model,
-      max_tokens: 100,
-      messages: [{ role: "user", content: userMessage }],
-      temperature: 0.1,
-      system: systemPrompt,
-    });
-
-    return response.content[0].type === "text"
-      ? response.content[0].text
-      : "none";
+    if (this.provider === "claude" && this.claudeClient) {
+      const response = await this.claudeClient.messages.create({
+        model: this.model,
+        max_tokens: 100,
+        messages: [{ role: "user", content: userMessage }],
+        temperature: 0.1,
+        system: systemPrompt,
+      });
+      return response.content[0].type === "text"
+        ? response.content[0].text
+        : "none";
+    } else if (this.provider === "deepseek" && this.deepseekClient) {
+      const response = await this.deepseekClient.chat.completions.create({
+        model: this.model,
+        max_tokens: 100,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userMessage },
+        ],
+        temperature: 0.1,
+      });
+      return response.choices[0]?.message?.content || "none";
+    }
+    throw new Error("No valid AI provider configured");
   }
 
   async generateResponse(
@@ -108,15 +144,27 @@ export class AIHandler {
       content: userMessage,
     });
 
-    const response = await this.client.messages.create({
-      model: this.model,
-      max_tokens: 4096,
-      messages: messages as Claude.MessageParam[],
-      temperature: 0.7,
-      system: systemPrompt,
-    });
-
-    return response.content[0].type === "text" ? response.content[0].text : "";
+    if (this.provider === "claude" && this.claudeClient) {
+      const response = await this.claudeClient.messages.create({
+        model: this.model,
+        max_tokens: 4096,
+        messages: messages as Claude.MessageParam[],
+        temperature: 0.7,
+        system: systemPrompt,
+      });
+      return response.content[0].type === "text"
+        ? response.content[0].text
+        : "";
+    } else if (this.provider === "deepseek" && this.deepseekClient) {
+      const response = await this.deepseekClient.chat.completions.create({
+        model: this.model,
+        max_tokens: 4096,
+        messages: [{ role: "system", content: systemPrompt }, ...messages],
+        temperature: 0.7,
+      });
+      return response.choices[0]?.message?.content || "";
+    }
+    throw new Error("No valid AI provider configured");
   }
 
   async generateEmbedding(text: string): Promise<number[]> {
