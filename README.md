@@ -6,6 +6,10 @@ Telegent is a flexible Telegram bot framework that lets you build and run your o
 
 ## Installation
 
+We recommend using the Telegent starter project to get started, which can be found [here](https://github.com/telegent/telegent-starter).
+
+If you prefer to install the package manually, you can do so with the following command:
+
 ```bash
 pnpm add telegent
 ```
