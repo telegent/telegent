@@ -2,7 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/telegent?logo=npm&style=flat&labelColor=000&color=3b82f6)](https://www.npmjs.org/package/telegent)
 
-Telegent makes it easy for you to build and run your own AI agent on Telegram, powered by Anthropic's Claude API with contextual understanding and memory management.
+Telegent is a flexible Telegram bot framework that lets you build and run your own AI agent, with support for multiple AI providers (Claude and DeepSeek), contextual understanding, and memory management.
 
 ## Installation
 
@@ -23,15 +23,46 @@ const bot = new Telegent({
   telegram: {
     token: process.env.TELEGRAM_TOKEN,
   },
-  claude: {
-    apiKey: process.env.CLAUDE_API_KEY,
+  ai: {
+    provider: "claude", // or "deepseek"
+    claudeApiKey: process.env.CLAUDE_API_KEY, // required if using Claude
+    deepseekApiKey: process.env.DEEPSEEK_API_KEY, // required if using DeepSeek
   },
   memory: {
     path: path.join(__dirname, "data"),
   },
+  // Optional configurations for plugins
+  openai: {
+    apiKey: process.env.OPENAI_API_KEY, // required for image generation
+  },
+  codex: {
+    apiKey: process.env.CODEX_API_KEY, // required for code generation
+  },
 });
 
 bot.start();
+```
+
+## Character Customization
+
+You can customize your AI agent's personality and behavior:
+
+```typescript
+const bot = new Telegent({
+  // ... other config options ...
+  character: {
+    name: "Assistant",
+    role: "helpful AI assistant",
+    basePersonality: "friendly and professional",
+    traits: [
+      {
+        name: "Helpful",
+        description: "Always eager to assist users",
+      },
+    ],
+    customPrompt: "Additional custom instructions here",
+  },
+});
 ```
 
 ## Plugin System
@@ -43,15 +74,7 @@ import { Telegent } from "telegent";
 import { SolanaPlugin, ImageGenPlugin, LoggerPlugin } from "telegent";
 
 const bot = new Telegent({
-  telegram: {
-    token: process.env.TELEGRAM_TOKEN,
-  },
-  claude: {
-    apiKey: process.env.CLAUDE_API_KEY,
-  },
-  memory: {
-    path: path.join(__dirname, "data"),
-  },
+  // ... configuration ...
 });
 
 // Register plugins
@@ -65,13 +88,21 @@ bot.start();
 ### Built-in Plugins
 
 - **Solana Plugin**: Adds Solana blockchain interaction capabilities
+
   ```typescript
   import { SolanaPlugin } from "telegent";
   ```
 
 - **Image Generation Plugin**: Enables AI image generation
+
   ```typescript
   import { ImageGenPlugin } from "telegent";
+  ```
+
+- **Code Generation Plugin**: Provides code generation capabilities
+
+  ```typescript
+  import { CodexPlugin } from "telegent";
   ```
 
 - **Logger Plugin**: Example plugin for logging bot activities
@@ -83,22 +114,60 @@ bot.start();
 
 - Node.js 18+
 - Telegram Bot Token
-- Claude API Key
+- AI Provider API Key (Claude or DeepSeek)
+- Optional: OpenAI API Key (for image generation)
+- Optional: Codex API Key (for code generation)
 
 ## Features
 
+- Multiple AI Provider Support (Claude and DeepSeek)
 - Plugin System
-- Context-aware responses using Claude AI
+- Context-aware responses
 - Local SQLite-based memory system
 - Persistent conversation history
+- Character customization
 - TypeScript support
+
+## Memory Management
+
+Telegent includes a sophisticated memory system that:
+
+- Stores conversation history
+- Manages context for more relevant responses
+- Extracts and stores important facts
+- Automatically cleans up old messages
+
+## API Reference
+
+### Core Methods
+
+```typescript
+class Telegent {
+  constructor(config: TelegentConfig);
+  async start(): Promise<void>;
+  async stop(): Promise<void>;
+  async registerPlugin(plugin: Plugin): Promise<void>;
+  async unregisterPlugin(pluginName: string): Promise<void>;
+  async sendMessage(chatId: number, text: string): Promise<void>;
+  async sendImage(
+    chatId: number,
+    imageUrl: string,
+    caption?: string
+  ): Promise<void>;
+}
+```
 
 ## Available Plugins
 
-- Solana (Basic)
-- Image Generation (Basic)
+- Solana (Basic blockchain interactions)
+- Image Generation (AI image creation)
+- Code Generation (AI code assistance)
 - Logger (Example Plugin)
 
 ## License
 
 MIT
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
