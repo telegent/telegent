@@ -12,8 +12,7 @@ export class ImageGenerationPlugin extends BasePlugin implements Plugin {
   constructor(config: TelegentConfig) {
     super({
       name: "image-generation",
-      description:
-        "Generate images using DALL-E 3 using the message of the user as the prompt",
+      description: "Generate images using DALL-E 3",
       version: "1.0.0",
       author: "Telegent",
     });
@@ -23,7 +22,7 @@ export class ImageGenerationPlugin extends BasePlugin implements Plugin {
     this.capabilities = [
       {
         name: "generate",
-        description: "Generate an image based on a text prompt using DALL-E 3",
+        description: "Generate an image based on using DALL-E 3",
         examples: [
           "generate a serene landscape with mountains and a lake at sunset",
           "generate a futuristic cityscape at night with flying cars",
@@ -33,8 +32,7 @@ export class ImageGenerationPlugin extends BasePlugin implements Plugin {
       },
       {
         name: "generate-hd",
-        description:
-          "Generate a high-definition (1024x1024) image based on a text prompt",
+        description: "Generate a high-definition (1024x1024) image",
         examples: [
           "high definition portrait of a cyberpunk character",
           "generate a high definition of an intricate steampunk machine with brass gears",
